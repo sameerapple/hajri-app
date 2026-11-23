@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Hajri App</title>
+<style>
+  :root {
+    --primary: #0f766e;
+    --primary-dark: #115e59;
+    --primary-light: #ccfbf1;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --amber: #d97706;
+    --amber-bg: #fef3c7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); padding-bottom: 24px; }
+
+  /* Header */
+  .topbar {
+    background: var(--primary); color: #fff; padding: 12px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .brand { display: flex; flex-direction: column; }
+  .brand h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.2px; }
+  .sync-pill {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px;
+    opacity: 0.95; margin-top: 2px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+  .dot.local { background: #fbbf24; }
+  .dot.syncing { background: #60a5fa; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .top-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    background: rgba(255,255,255,0.18); border: none; color: #fff;
+    padding: 7px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .icon-btn:active { background: rgba(255,255,255,0.3); }
+
+  /* Mode Switcher */
+  .mode-bar {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    padding: 10px 12px 4px;
+  }
+  .mode-btn {
+    padding: 10px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--card); color: var(--muted); font-size: 13px; font-weight: 700;
+    cursor: pointer; text-align: center;
+  }
+  .mode-btn.active {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+    box-shadow: 0 2px 6px rgba(15,118,110,0.25);
+  }
+
+  .container { padding: 8px 12px; max-width: 600px; margin: 0 auto; }
+
+  /* Cards */
+  .card {
+    background: var(--card); border-radius: 12px; padding: 13px;
+    margin-bottom: 10px; border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 10px 2px 6px; }
+
+  /* Worker Punch Cards (Admin) */
+  .punch-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .w-info h3 { font-size: 16px; font-weight: 700; }
+  .w-rate { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .status-tag {
+    display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px;
+    border-radius: 99px; margin-top: 5px;
+  }
+  .status-in { background: var(--green-bg); color: var(--green); }
+  .status-out { background: #f1f5f9; color: var(--muted); }
+
+  .punch-btn {
+    border: none; border-radius: 10px; padding: 12px 16px; font-size: 13px;
+    font-weight: 800; cursor: pointer; min-width: 112px; text-align: center;
+    color: #fff; transition: transform 0.1s;
+  }
+  .punch-btn:active { transform: scale(0.96); }
+  .btn-in { background: var(--green); }
+  .btn-out { background: var(--red); }
+
+  /* Worker Selector Pills */
+  .pill-row { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; }
+  .pill {
+    padding: 7px 14px; border-radius: 99px; border: 1.5px solid var(--border);
+    background: var(--card); font-size: 13px; font-weight: 700; color: var(--muted);
+    white-space: nowrap; cursor: pointer;
+  }
+  .pill.active { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); }
+
+  /* Filter Row */
+  .filter-row { display: flex; gap: 6px; margin-bottom: 10px; }
+  .f-btn {
+    flex: 1; padding: 6px 4px; font-size: 12px; font-weight: 600;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--card);
+    color: var(--muted); cursor: pointer;
+  }
+  .f-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+  /* KPI Grid */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .kpi {
+    background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: 11px;
+  }
+  .kpi-lbl { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .kpi-val { font-size: 18px; font-weight: 800; margin-top: 3px; }
+  .kpi-val.green { color: var(--green); }
+  .kpi-val.amber { color: var(--amber); }
+  .kpi-val.primary { color: var(--primary); }
+
+  /* Sub-tabs */
+  .sub-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 8px; }
+  .sub-tab {
+    flex: 1; text-align: center; padding: 8px; font-size: 13px; font-weight: 700;
+    color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+  }
+  .sub-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* List rows */
+  .log-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-main { font-weight: 700; }
+  .log-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .log-right { text-align: right; }
+  .del-btn {
+    background: var(--red-bg); color: var(--red); border: none; border-radius: 6px;
+    padding: 4px 8px; font-size: 11px; font-weight: 700; margin-top: 4px; cursor: pointer;
+  }
+
+  /* Forms */
+  .form-group { margin-bottom: 10px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+  .form-control {
+    width: 100%; padding: 9px 11px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 14px; background: #fff; color: var(--text);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .primary-btn {
+    width: 100%; padding: 11px; background: var(--primary); color: #fff; border: none;
+    border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .primary-btn:active { background: var(--primary-dark); }
+
+  /* Modals */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 50;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--card); width: 100%; max-width: 420px; border-radius: 14px;
+    padding: 16px; max-height: 88vh; overflow-y: auto;
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .modal-head h2 { font-size: 16px; font-weight: 800; }
+  .close-btn { background: #f1f5f9; border: none; border-radius: 8px; padding: 5px 10px; font-weight: 700; cursor: pointer; }
+
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: #0f172a; color: #fff; padding: 9px 16px; border-radius: 99px;
+    font-size: 13px; font-weight: 600; z-index: 100; display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); white-space: nowrap;
+  }
+  .empty { text-align: center; padding: 20px 10px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>Hajri & Payment</h1>
+    <div class="sync-pill">
+      <span id="syncDot" class="dot local"></span>
+      <span id="syncText">Local Mode (URL not set)</span>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" onclick="syncFromCloud(true)">Sync</button>
+    <button class="icon-btn" onclick="openSettings()">Settings</button>
+  </div>
+</div>
+
+<div class="mode-bar">
+  <button id="tabWorker" class="mode-btn active" onclick="switchMode('worker')">Worker View</button>
+  <button id="tabAdmin" class="mode-btn" onclick="requestAdminMode()">Admin Punch</button>
+</div>
+
+<div class="container">
+  <!-- WORKER VIEW -->
+  <div id="workerView">
+    <div class="pill-row" id="workerPills"></div>
+
+    <div class="filter-row">
+      <button class="f-btn active" onclick="setFilter('month', this)">This Month</button>
+      <button class="f-btn" onclick="setFilter('today', this)">Today</button>
+      <button class="f-btn" onclick="setFilter('all', this)">All Time</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-lbl">Total Kaam (Hours)</div>
+        <div class="kpi-val primary" id="kpiHours">0h 0m</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-lbl">Total Kamai (Earned)</div>
+        <div class="kpi-val" id="kpiEarned">₹0</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-lbl">Jama / Paid</div>
+        <div class="kpi-val green" id="kpiPaid">₹0</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-lbl">Baaki (Balance)</div>
+        <div class="kpi-val amber" id="kpiBalance">₹0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sub-tabs">
+        <div class="sub-tab active" onclick="switchSubTab('att', this)">Hajri Log</div>
+        <div class="sub-tab" onclick="switchSubTab('pay', this)">Payment Details</div>
+      </div>
+      <div id="workerLogList"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN VIEW -->
+  <div id="adminView" style="display:none;">
+    <div class="section-title">Daily Punch IN / OUT</div>
+    <div id="adminPunchCards"></div>
+
+    <div class="section-title">Payment / Advance Entry</div>
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Worker</label>
+          <select id="payWorker" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label>Amount (₹)</label>
+          <input type="number" id="payAmount" class="form-control" placeholder="e.g. 500" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Method</label>
+          <select id="payMethod" class="form-control">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI / GPay</option>
+            <option value="Bank">Bank</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Note (Optional)</label>
+          <input type="text" id="payNote" class="form-control" placeholder="Advance / Hisab" />
+        </div>
+      </div>
+      <button class="primary-btn" onclick="submitPayment()">Save Payment</button>
+    </div>
+
+    <div class="section-title">Recent Entries (Admin Control)</div>
+    <div class="card" id="adminRecentList"></div>
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div id="pinModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Admin PIN Daalein</h2>
+      <button class="close-btn" onclick="closeModal('pinModal')">X</button>
+    </div>
+    <div class="form-group">
+      <label>Default PIN: 1234</label>
+      <input type="password" id="pinInput" class="form-control" inputmode="numeric" placeholder="PIN" />
+    </div>
+    <button class="primary-btn" onclick="verifyPin()">Unlock Admin</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Cloud & Rate Settings</h2>
+      <button class="close-btn" onclick="closeModal('settingsModal')">X</button>
+    </div>
+    <div class="form-group">
+      <label>Cloud Web App URL (Google Apps Script)</label>
+      <input type="url" id="cloudUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" />
+    </div>
+    <div class="form-group">
+      <label>Admin PIN</label>
+      <input type="text" id="newPinInput" class="form-control" inputmode="numeric" placeholder="1234" />
+    </div>
+    <button class="primary-btn" style="margin-bottom:14px;" onclick="saveSettings()">Save URL & PIN</button>
+
+    <div class="section-title">Worker Hourly Rates (₹ / Hour)</div>
+    <div id="rateEditorList"></div>
+
+    <div class="section-title" style="margin-top:12px;">Add New Worker</div>
+    <div class="form-row">
+      <input type="text" id="newWName" class="form-control" placeholder="Name" />
+      <input type="number" id="newWRate" class="form-control" placeholder="₹/hr (e.g. 100)" />
+    </div>
+    <button class="primary-btn" style="margin-top:8px;" onclick="addNewWorker()">Add Worker</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const STORAGE_KEY = "hajri_app_data_v1";
+const CFG_KEY = "hajri_app_cfg_v1";
+
+let state = {
+  workers: [
+    { id: "ashraf", name: "Ashraf", hourlyRate: 100, active: true },
+    { id: "anas", name: "Anas", hourlyRate: 100, active: true }
+  ],
+  attendance: [],
+  payments: []
+};
+
+let cfg = {
+  cloudUrl: "",
+  adminPin: "1234"
+};
+
+let currentMode = "worker";
+let adminUnlocked = false;
+let selectedWorkerId = "ashraf";
+let dateFilter = "month";
+let workerSubTab = "att";
+let pendingAction = null;
+
+function init() {
+  try {
+    const savedCfg = localStorage.getItem(CFG_KEY);
+    if (savedCfg) cfg = { ...cfg, ...JSON.parse(savedCfg) };
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    if (savedState) state = { ...state, ...JSON.parse(savedState) };
+  } catch (e) {}
+
+  renderAll();
+  if (cfg.cloudUrl) {
+    syncFromCloud(false);
+  }
+  setInterval(updateLiveTimers, 30000);
+}
+
+function saveLocal() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => { t.style.display = "none"; }, 2600);
+}
+
+function setSyncStatus(mode, text) {
+  const dot = document.getElementById("syncDot");
+  const txt = document.getElementById("syncText");
+  dot.className = "dot " + (mode === "ok" ? "" : mode);
+  txt.textContent = text;
+}
+
+async function syncFromCloud(manual) {
+  if (!cfg.cloudUrl) {
+    setSyncStatus("local", "Local Mode (Set URL in Settings)");
+    if (manual) showToast("Settings me Cloud URL daalein");
+    return;
+  }
+  setSyncStatus("syncing", "Syncing...");
+  try {
+    const res = await fetch(cfg.cloudUrl + "?action=getAll&t=" + Date.now());
+    const data = await res.json();
+    if (data.ok) {
+      if (data.workers && data.workers.length) state.workers = data.workers;
+      state.attendance = data.attendance || [];
+      state.payments = data.payments || [];
+      saveLocal();
+      renderAll();
+      setSyncStatus("ok", "Cloud Synced");
+      if (manual) showToast("Cloud data updated!");
+    } else {
+      setSyncStatus("local", "Sync Error");
+      if (manual) showToast("Error: " + (data.error || "Failed"));
+    }
+  } catch (err) {
+    setSyncStatus("local", "Offline / Local");
+    if (manual) showToast("Network error, local data shown");
+  }
+}
+
+async function postCloud(payload) {
+  if (!cfg.cloudUrl) return { ok: true, localOnly: true };
+  setSyncStatus("syncing", "Saving to Cloud...");
+  try {
+    const res = await fetch(cfg.cloudUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setSyncStatus("ok", "Cloud Synced");
+    } else {
+      setSyncStatus("local", "Cloud Error");
+    }
+    return data;
+  } catch (err) {
+    setSyncStatus("local", "Offline (Saved Locally)");
+    return { ok: false, offline: true };
+  }
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById("tabWorker").classList.toggle("active", mode === "worker");
+  document.getElementById("tabAdmin").classList.toggle("active", mode === "admin");
+  document.getElementById("workerView").style.display = mode === "worker" ? "block" : "none";
+  document.getElementById("adminView").style.display = mode === "admin" ? "block" : "none";
+  renderAll();
+}
+
+function requestAdminMode() {
+  if (adminUnlocked) {
+    switchMode("admin");
+    return;
+  }
+  pendingAction = () => { adminUnlocked = true; switchMode("admin"); };
+  document.getElementById("pinInput").value = "";
+  document.getElementById("pinModal").classList.add("open");
+}
+
+function openSettings() {
+  if (!adminUnlocked) {
+    pendingAction = () => { adminUnlocked = true; showSettingsModal(); };
+    document.getElementById("pinInput").value = "";
+    document.getElementById("pinModal").classList.add("open");
+    return;
+  }
+  showSettingsModal();
+}
+
+function showSettingsModal() {
+  document.getElementById("cloudUrlInput").value = cfg.cloudUrl || "";
+  document.getElementById("newPinInput").value = cfg.adminPin || "1234";
+  renderRateEditor();
+  document.getElementById("settingsModal").classList.add("open");
+}
+
+function verifyPin() {
+  const val = document.getElementById("pinInput").value.trim();
+  if (val === String(cfg.adminPin)) {
+    closeModal("pinModal");
+    if (pendingAction) pendingAction();
+    pendingAction = null;
+  } else {
+    showToast("Galat PIN!");
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function formatTime(iso) {
+  if (!iso) return "--";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDuration(mins) {
+  const m = Math.max(0, Math.round(Number(mins || 0)));
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return h + "h " + rem + "m";
+}
+
+function getOpenSession(workerId) {
+  for (let i = state.attendance.length - 1; i >= 0; i--) {
+    if (state.attendance[i].workerId === workerId && !state.attendance[i].outTime) {
+      return state.attendance[i];
+    }
+  }
+  return null;
+}
+
+async function handlePunch(workerId) {
+  const w = state.workers.find(x => x.id === workerId);
+  if (!w) return;
+  const open = getOpenSession(workerId);
+  const nowIso = new Date().toISOString();
+
+  if (!open) {
+    const rec = {
+      id: "att_" + Date.now(),
+      workerId: w.id,
+      workerName: w.name,
+      date: todayStr(),
+      inTime: nowIso,
+      outTime: "",
+      durationMinutes: 0,
+      earnedAmount: 0,
+      note: ""
+    };
+    state.attendance.push(rec);
+    saveLocal();
+    renderAll();
+    showToast(w.name + " Punched IN!");
+    const res = await postCloud({ action: "punchIn", workerId: w.id, workerName: w.name, date: rec.date, inTime: nowIso });
+    if (res && res.id) { rec.id = res.id; saveLocal(); }
+  } else {
+    const inMs = new Date(open.inTime).getTime();
+    const outMs = new Date(nowIso).getTime();
+    const mins = Math.max(0, Math.round((outMs - inMs) / 60000));
+    const rate = Number(w.hourlyRate || 0);
+    const earned = Math.round((mins / 60) * rate * 100) / 100;
+
+    open.outTime = nowIso;
+    open.durationMinutes = mins;
+    open.earnedAmount = earned;
+    saveLocal();
+    renderAll();
+    showToast(w.name + " Punched OUT (" + formatDuration(mins) + ")");
+    await postCloud({ action: "punchOut", workerId: w.id, outTime: nowIso, hourlyRate: rate });
+  }
+}
+
+async function submitPayment() {
+  const wid = document.getElementById("payWorker").value;
+  const amt = Number(document.getElementById("payAmount").value);
+  const method = document.getElementById("payMethod").value;
+  const note = document.getElementById("payNote").value.trim();
+  const w = state.workers.find(x => x.id === wid);
+  if (!w || !amt || amt <= 0) {
+    showToast("Sahi amount daalein");
+    return;
+  }
+  const rec = {
+    id: "pay_" + Date.now(),
+    workerId: w.id,
+    workerName: w.name,
+    date: todayStr(),
+    amount: amt,
+    method: method,
+    note: note
+  };
+  state.payments.push(rec);
+  document.getElementById("payAmount").value = "";
+  document.getElementById("payNote").value = "";
+  saveLocal();
+  renderAll();
+  showToast("₹" + amt + " payment saved for " + w.name);
+  const res = await postCloud({ action: "addPayment", ...rec });
+  if (res && res.id) { rec.id = res.id; saveLocal(); }
+}
+
+async function deleteEntry(type, id) {
+  if (!confirm("Delete this entry?")) return;
+  if (type === "attendance") {
+    state.attendance = state.attendance.filter(x => x.id !== id);
+  } else {
+    state.payments = state.payments.filter(x => x.id !== id);
+  }
+  saveLocal();
+  renderAll();
+  showToast("Deleted");
+  await postCloud({ action: "deleteRecord", type: type, id: id });
+}
+
+function saveSettings() {
+  cfg.cloudUrl = document.getElementById("cloudUrlInput").value.trim();
+  const newPin = document.getElementById("newPinInput").value.trim();
+  if (newPin.length >= 4) cfg.adminPin = newPin;
+  saveLocal();
+  closeModal("settingsModal");
+  if (cfg.cloudUrl) {
+    syncFromCloud(true);
+  } else {
+    setSyncStatus("local", "Local Mode (URL not set)");
+    showToast("Settings saved locally");
+  }
+}
+
+function renderRateEditor() {
+  const box = document.getElementById("rateEditorList");
+  box.innerHTML = state.workers.map(w => `
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+      <strong style="flex:1; font-size:14px;">${w.name}</strong>
+      <input type="number" id="rate_${w.id}" class="form-control" style="width:110px;" value="${w.hourlyRate}" />
+      <button class="icon-btn" style="background:var(--primary);" onclick="updateWorkerRate('${w.id}')">Save</button>
+    </div>
+  `).join("");
+}
+
+async function updateWorkerRate(wid) {
+  const w = state.workers.find(x => x.id === wid);
+  const val = Number(document.getElementById("rate_" + wid).value);
+  if (!w || isNaN(val) || val < 0) return;
+  w.hourlyRate = val;
+  saveLocal();
+  renderAll();
+  showToast(w.name + " rate updated: ₹" + val + "/hr");
+  await postCloud({ action: "saveWorker", id: w.id, name: w.name, hourlyRate: val });
+}
+
+async function addNewWorker() {
+  const name = document.getElementById("newWName").value.trim();
+  const rate = Number(document.getElementById("newWRate").value);
+  if (!name || isNaN(rate)) { showToast("Name aur rate daalein"); return; }
+  const id = name.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + (Date.now() % 1000);
+  const w = { id, name, hourlyRate: rate, active: true };
+  state.workers.push(w);
+  document.getElementById("newWName").value = "";
+  document.getElementById("newWRate").value = "";
+  saveLocal();
+  renderRateEditor();
+  renderAll();
+  showToast(name + " added!");
+  await postCloud({ action: "saveWorker", id: w.id, name: w.name, hourlyRate: rate });
+}
+
+function setFilter(f, btn) {
+  dateFilter = f;
+  document.querySelectorAll(".f-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderWorkerView();
+}
+
+function switchSubTab(t, btn) {
+  workerSubTab = t;
+  document.querySelectorAll(".sub-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderWorkerView();
+}
+
+function matchesDateFilter(dateStr) {
+  if (dateFilter === "all") return true;
+  const t = todayStr();
+  if (dateFilter === "today") return String(dateStr).slice(0, 10) === t;
+  if (dateFilter === "month") return String(dateStr).slice(0, 7) === t.slice(0, 7);
+  return true;
+}
+
+function renderAll() {
+  renderWorkerPills();
+  renderWorkerView();
+  renderAdminView();
+}
+
+function renderWorkerPills() {
+  const box = document.getElementById("workerPills");
+  box.innerHTML = state.workers.map(w => `
+    <button class="pill ${w.id === selectedWorkerId ? 'active' : ''}" onclick="selectWorker('${w.id}')">${w.name}</button>
+  `).join("");
+
+  const sel = document.getElementById("payWorker");
+  if (sel) {
+    sel.innerHTML = state.workers.map(w => `<option value="${w.id}">${w.name}</option>`).join("");
+  }
+}
+
+function selectWorker(id) {
+  selectedWorkerId = id;
+  renderWorkerPills();
+  renderWorkerView();
+}
+
+function renderWorkerView() {
+  const att = state.attendance.filter(x => x.workerId === selectedWorkerId && matchesDateFilter(x.date));
+  const pay = state.payments.filter(x => x.workerId === selectedWorkerId && matchesDateFilter(x.date));
+
+  let totalMins = 0;
+  let totalEarned = 0;
+  att.forEach(a => {
+    totalMins += Number(a.durationMinutes || 0);
+    totalEarned += Number(a.earnedAmount || 0);
+  });
+
+  let totalPaid = 0;
+  pay.forEach(p => { totalPaid += Number(p.amount || 0); });
+
+  const balance = Math.round((totalEarned - totalPaid) * 100) / 100;
+
+  document.getElementById("kpiHours").textContent = formatDuration(totalMins);
+  document.getElementById("kpiEarned").textContent = "₹" + Math.round(totalEarned);
+  document.getElementById("kpiPaid").textContent = "₹" + Math.round(totalPaid);
+  document.getElementById("kpiBalance").textContent = "₹" + Math.round(balance);
+
+  const list = document.getElementById("workerLogList");
+  if (workerSubTab === "att") {
+    const sorted = [...att].reverse();
+    if (!sorted.length) {
+      list.innerHTML = `<div class="empty">Koi hajri record nahi mila</div>`;
+      return;
+    }
+    list.innerHTML = sorted.map(a => `
+      <div class="log-row">
+        <div>
+          <div class="log-main">${String(a.date).slice(0, 10)}</div>
+          <div class="log-sub">IN: ${formatTime(a.inTime)} • OUT: ${a.outTime ? formatTime(a.outTime) : '<span style="color:var(--green);font-weight:700;">Working</span>'}</div>
+        </div>
+        <div class="log-right">
+          <div class="log-main">${a.outTime ? formatDuration(a.durationMinutes) : '--'}</div>
+          <div class="log-sub" style="color:var(--primary);font-weight:700;">₹${Math.round(Number(a.earnedAmount || 0))}</div>
+        </div>
+      </div>
+    `).join("");
+  } else {
+    const sorted = [...pay].reverse();
+    if (!sorted.length) {
+      list.innerHTML = `<div class="empty">Koi payment record nahi mila</div>`;
+      return;
+    }
+    list.innerHTML = sorted.map(p => `
+      <div class="log-row">
+        <div>
+          <div class="log-main">${String(p.date).slice(0, 10)} (${p.method})</div>
+          <div class="log-sub">${p.note || 'Payment'}</div>
+        </div>
+        <div class="log-right">
+          <div class="log-main" style="color:var(--green);">₹${Math.round(Number(p.amount))}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+}
+
+function renderAdminView() {
+  const box = document.getElementById("adminPunchCards");
+  box.innerHTML = state.workers.map(w => {
+    const open = getOpenSession(w.id);
+    let liveTxt = "Not Punched In";
+    if (open) {
+      const mins = Math.max(0, Math.round((Date.now() - new Date(open.inTime).getTime()) / 60000));
+      liveTxt = `IN ${formatTime(open.inTime)} (${formatDuration(mins)})`;
+    }
+    return `
+      <div class="card punch-card">
+        <div class="w-info">
+          <h3>${w.name}</h3>
+          <div class="w-rate">Rate: ₹${w.hourlyRate}/hr</div>
+          <span class="status-tag ${open ? 'status-in' : 'status-out'}" data-live-worker="${w.id}">${liveTxt}</span>
+        </div>
+        <button class="punch-btn ${open ? 'btn-out' : 'btn-in'}" onclick="handlePunch('${w.id}')">
+          ${open ? 'PUNCH OUT' : 'PUNCH IN'}
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  const recentBox = document.getElementById("adminRecentList");
+  const combined = [
+    ...state.attendance.slice(-8).map(a => ({ kind: "attendance", ts: a.inTime, item: a })),
+    ...state.payments.slice(-5).map(p => ({ kind: "payment", ts: p.date, item: p }))
+  ].reverse().slice(0, 10);
+
+  if (!combined.length) {
+    recentBox.innerHTML = `<div class="empty">Abhi koi entry nahi hai</div>`;
+    return;
+  }
+
+  recentBox.innerHTML = combined.map(entry => {
+    if (entry.kind === "attendance") {
+      const a = entry.item;
+      return `
+        <div class="log-row">
+          <div>
+            <div class="log-main">${a.workerName} • ${String(a.date).slice(0, 10)}</div>
+            <div class="log-sub">IN ${formatTime(a.inTime)} → ${a.outTime ? 'OUT ' + formatTime(a.outTime) + ' (' + formatDuration(a.durationMinutes) + ')' : 'Working'}</div>
+          </div>
+          <div class="log-right">
+            <div class="log-main">₹${Math.round(Number(a.earnedAmount || 0))}</div>
+            <button class="del-btn" onclick="deleteEntry('attendance', '${a.id}')">Del</button>
+          </div>
+        </div>
+      `;
+    } else {
+      const p = entry.item;
+      return `
+        <div class="log-row">
+          <div>
+            <div class="log-main">${p.workerName} • Payment (${p.method})</div>
+            <div class="log-sub">${String(p.date).slice(0, 10)} ${p.note ? '• ' + p.note : ''}</div>
+          </div>
+          <div class="log-right">
+            <div class="log-main" style="color:var(--green);">₹${Math.round(Number(p.amount))}</div>
+            <button class="del-btn" onclick="deleteEntry('payment', '${p.id}')">Del</button>
+          </div>
+        </div>
+      `;
+    }
+  }).join("");
+}
+
+function updateLiveTimers() {
+  if (currentMode === "admin") renderAdminView();
+}
+
+init();
+</script>
+</body>
+</html>
